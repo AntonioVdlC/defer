@@ -4,14 +4,13 @@ declare global {
   }
 }
 
-if (!Array.isArray(Function.prototype.__$_deferArr)) {
-  Function.prototype.__$_deferArr = [];
-}
-
 function defer(fn: Function, caller: Function): void {
   if (caller.constructor.name === "Function") {
     setTimeout(fn, 0);
   } else if (caller.constructor.name === "AsyncFunction") {
+    if (!Array.isArray(caller.__$_deferArr)) {
+      caller.__$_deferArr = [];
+    }
     caller.__$_deferArr.push(fn);
   }
 }
