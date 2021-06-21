@@ -1,6 +1,6 @@
 {
   "name": "@antoniovdlc/defer",
-  "version": "0.0.2",
+  "version": "0.1.0",
   "description": "Go-like defer functions in JavaScript.",
   "main": "dist/index.cjs.js",
   "module": "dist/index.esm.js",
