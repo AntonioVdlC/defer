@@ -51,7 +51,7 @@ const { defer, deferrable } = require("@antoniovdlc/defer");
 
 `defer` takes a function as argument, which will be called at the end of the execution of the caller function, and a caller function.
 
-For sync functions, `defer` simply puts the `fn` at the bottom of the call stack using `setTimeout(fn, 0)`.
+For sync functions, `defer` simply puts the `fn` on the call stack using `setTimeout(fn, 0)`.
 For async functions, it is a bit more tricky, and we keep track of deferred functions within the `caller` itself, via the property `__$_deferArr`.
 > Using `defer` in async functions requires them to be wrapper with `deferrable` to work properly.
 
@@ -59,6 +59,11 @@ For async functions, it is a bit more tricky, and we keep track of deferred func
 
 `defer` works out of the box within sync functions. Unfortunately, for async functions, we need to use a wrapper: `deferrable`.
 This wrapper returns a function that will compute similarly to its argument, but helps keep track of all the deferred functions within it.
+
+`defer`red functions are run sequentially, and as such, if one function throws an error, the following `defer`red functions won't run.
+
+`defer`red functions in a `deferrable` will not run if the wrapped function throws an error. 
+
 
 ## Examples
 
@@ -75,10 +80,10 @@ main(); // hello world
 There can be as many `defer` calls in a function as you'd like:
 ```js
 function f() {
-  defer(() => console.log("1), f);
+  defer(() => console.log("1"), f);
   console.log("2");
   defer(() => console.log("3"), f);
-  console.log("4")
+  console.log("4");
 }
 
 f(); // 2 4 1 3
@@ -94,7 +99,7 @@ const f = deferrable(async function fn() {
   await new Promise(resolve => setTimeout(() => resolve(console.log("2"))));
     
   defer(() => console.log("3"), fn);
-  console.log("4")
+  console.log("4");
 });
 
 await f(); // 2 4 1 3

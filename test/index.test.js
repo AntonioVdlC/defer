@@ -186,4 +186,54 @@ describe("deferrable", () => {
     expect(returnedValue).toEqual(value);
     expect(deferred).toHaveBeenCalled();
   });
+
+  it("throws if the wrapped function throws, and doesn't run deferred functions", async () => {
+    const deferred = jest.fn();
+
+    const func = deferrable(async function fn() {
+      defer(deferred, fn);
+
+      await new Promise((resolve) =>
+        setTimeout(() => {
+          resolve(42);
+        }, 100)
+      );
+      throw new Error();
+    });
+
+    try {
+      await func();
+    } catch (err) {
+      expect(err).not.toBeNull();
+      expect(deferred).not.toHaveBeenCalled();
+    }
+  });
+
+  it("throws if a deferred function throws, and doesn't run subsequent deferred functions", async () => {
+    const mock = jest.fn();
+    const deferred = jest.fn();
+
+    const func = deferrable(async function fn() {
+      defer(() => {
+        throw new Error();
+      }, fn);
+
+      defer(deferred, fn);
+
+      await new Promise((resolve) =>
+        setTimeout(() => {
+          mock();
+          resolve();
+        }, 100)
+      );
+    });
+
+    try {
+      await func();
+    } catch (err) {
+      expect(err).not.toBeNull();
+      expect(mock).toHaveBeenCalled();
+      expect(deferred).not.toHaveBeenCalled();
+    }
+  });
 });
