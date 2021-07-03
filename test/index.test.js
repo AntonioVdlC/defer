@@ -164,4 +164,26 @@ describe("deferrable", () => {
 
     expect(deferred2).toHaveBeenCalledAfter(mock2);
   });
+
+  it("returns the result from the wrapped function", async () => {
+    const value = 42;
+    const deferred = jest.fn();
+
+    const func = deferrable(async function fn() {
+      defer(deferred, fn);
+
+      const result = await new Promise((resolve) =>
+        setTimeout(() => {
+          resolve(value);
+        }, 100)
+      );
+
+      return result;
+    });
+
+    const returnedValue = await func();
+
+    expect(returnedValue).toEqual(value);
+    expect(deferred).toHaveBeenCalled();
+  });
 });

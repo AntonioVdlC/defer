@@ -17,11 +17,13 @@ function defer(fn: Function, caller: Function): void {
 
 function deferrable(fn: Function): Function {
   const f = async () => {
-    await fn();
+    const result = await fn();
 
     for (let i = 0, length = fn.__$_deferArr.length; i < length; i++) {
       await fn.__$_deferArr[i]();
     }
+
+    return result;
   };
 
   return f;
