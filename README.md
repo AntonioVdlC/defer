@@ -70,7 +70,7 @@ This wrapper returns a function that will compute similarly to its argument, but
 Let's start with a simple translation of the Go code we shared previously:
 ```js
 function main() {
-  defer(() => console.log("world");
+  defer(() => console.log("world"), main);
   console.log("hello");
 }
 
