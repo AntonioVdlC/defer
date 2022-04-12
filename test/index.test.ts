@@ -1,13 +1,15 @@
-import { defer, deferrable } from "../src/index.ts";
+import { describe, it, expect, vi } from "vitest";
+
+import { defer, deferrable } from "../src";
 
 describe("defer", () => {
   it("is a function", () => {
-    expect(defer).toBeFunction();
+    expect(typeof defer).toBe("function");
   });
 
   it("defers the execution of defered functions in sync functions", () => {
-    const mock = jest.fn();
-    const deferred = jest.fn();
+    const mock = vi.fn();
+    const deferred = vi.fn();
 
     function fn() {
       defer(deferred, fn);
@@ -16,14 +18,18 @@ describe("defer", () => {
 
     fn();
 
-    expect(deferred).toHaveBeenCalledAfter(mock);
+    setTimeout(() => {
+      expect(mock.mock.invocationCallOrder[0]).toBeLessThan(
+        deferred.mock.invocationCallOrder[0]
+      );
+    }, 0);
   });
 
   it("defers the execution of defered functions in sync functions (complex)", () => {
-    const mock1 = jest.fn();
-    const mock2 = jest.fn();
-    const deferred1 = jest.fn();
-    const deferred2 = jest.fn();
+    const mock1 = vi.fn();
+    const mock2 = vi.fn();
+    const deferred1 = vi.fn();
+    const deferred2 = vi.fn();
 
     function fn() {
       defer(deferred1, fn);
@@ -34,16 +40,25 @@ describe("defer", () => {
 
     fn();
 
-    expect(mock1).toHaveBeenCalledBefore(mock2);
-    expect(mock2).toHaveBeenCalledBefore(deferred1);
     setTimeout(() => {
-      expect(deferred1).toHaveBeenCalledBefore(deferred2);
+      expect(mock1.mock.invocationCallOrder[0]).toBeLessThan(
+        mock2.mock.invocationCallOrder[0]
+      );
+      expect(mock1.mock.invocationCallOrder[0]).toBeLessThan(
+        deferred1.mock.invocationCallOrder[0]
+      );
+      expect(mock2.mock.invocationCallOrder[0]).toBeLessThan(
+        deferred2.mock.invocationCallOrder[0]
+      );
+      expect(deferred1.mock.invocationCallOrder[0]).toBeLessThan(
+        deferred2.mock.invocationCallOrder[0]
+      );
     }, 0);
   });
 
   it("defers the execution of defered functions in sync functions (multiple)", () => {
-    const mock1 = jest.fn();
-    const deferred1 = jest.fn();
+    const mock1 = vi.fn();
+    const deferred1 = vi.fn();
 
     function fn1() {
       defer(deferred1, fn1);
@@ -52,10 +67,8 @@ describe("defer", () => {
 
     fn1();
 
-    expect(deferred1).toHaveBeenCalledAfter(mock1);
-
-    const mock2 = jest.fn();
-    const deferred2 = jest.fn();
+    const mock2 = vi.fn();
+    const deferred2 = vi.fn();
 
     function fn2() {
       defer(deferred2, fn2);
@@ -64,18 +77,31 @@ describe("defer", () => {
 
     fn2();
 
-    expect(deferred2).toHaveBeenCalledAfter(mock2);
+    setTimeout(() => {
+      expect(mock1.mock.invocationCallOrder[0]).toBeLessThan(
+        mock2.mock.invocationCallOrder[0]
+      );
+      expect(mock1.mock.invocationCallOrder[0]).toBeLessThan(
+        deferred1.mock.invocationCallOrder[0]
+      );
+      expect(mock2.mock.invocationCallOrder[0]).toBeLessThan(
+        deferred2.mock.invocationCallOrder[0]
+      );
+      expect(deferred1.mock.invocationCallOrder[0]).toBeLessThan(
+        deferred2.mock.invocationCallOrder[0]
+      );
+    }, 0);
   });
 });
 
 describe("deferrable", () => {
   it("is a function", () => {
-    expect(deferrable).toBeFunction();
+    expect(typeof deferrable).toBe("function");
   });
 
   it("defers the execution of defered functions in async functions", async () => {
-    const mock = jest.fn();
-    const deferred = jest.fn();
+    const mock = vi.fn();
+    const deferred = vi.fn();
 
     const func = deferrable(async function fn() {
       defer(deferred, fn);
@@ -83,21 +109,23 @@ describe("deferrable", () => {
       await new Promise((resolve) =>
         setTimeout(() => {
           mock();
-          resolve();
+          resolve(true);
         }, 100)
       );
     });
 
     await func();
 
-    expect(deferred).toHaveBeenCalledAfter(mock);
+    expect(mock.mock.invocationCallOrder[0]).toBeLessThan(
+      deferred.mock.invocationCallOrder[0]
+    );
   });
 
   it("defers the execution of defered functions in async functions (complex)", async () => {
-    const mock1 = jest.fn();
-    const mock2 = jest.fn();
-    const deferred1 = jest.fn();
-    const deferred2 = jest.fn();
+    const mock1 = vi.fn();
+    const mock2 = vi.fn();
+    const deferred1 = vi.fn();
+    const deferred2 = vi.fn();
 
     const func = deferrable(async function fn() {
       defer(
@@ -111,7 +139,7 @@ describe("deferrable", () => {
       await new Promise((resolve) =>
         setTimeout(() => {
           mock1();
-          resolve();
+          resolve(true);
         }, 100)
       );
 
@@ -122,14 +150,23 @@ describe("deferrable", () => {
 
     await func();
 
-    expect(mock1).toHaveBeenCalledBefore(mock2);
-    expect(mock2).toHaveBeenCalledBefore(deferred1);
-    expect(deferred1).toHaveBeenCalledBefore(deferred2);
+    expect(mock1.mock.invocationCallOrder[0]).toBeLessThan(
+      mock2.mock.invocationCallOrder[0]
+    );
+    expect(mock1.mock.invocationCallOrder[0]).toBeLessThan(
+      deferred1.mock.invocationCallOrder[0]
+    );
+    expect(mock2.mock.invocationCallOrder[0]).toBeLessThan(
+      deferred2.mock.invocationCallOrder[0]
+    );
+    expect(deferred1.mock.invocationCallOrder[0]).toBeLessThan(
+      deferred2.mock.invocationCallOrder[0]
+    );
   });
 
   it("defers the execution of defered functions in async functions (multiple)", async () => {
-    const mock1 = jest.fn();
-    const deferred1 = jest.fn();
+    const mock1 = vi.fn();
+    const deferred1 = vi.fn();
 
     const func1 = deferrable(async function fn1() {
       defer(deferred1, fn1);
@@ -137,17 +174,15 @@ describe("deferrable", () => {
       await new Promise((resolve) =>
         setTimeout(() => {
           mock1();
-          resolve();
+          resolve(true);
         }, 100)
       );
     });
 
     await func1();
 
-    expect(deferred1).toHaveBeenCalledAfter(mock1);
-
-    const mock2 = jest.fn();
-    const deferred2 = jest.fn();
+    const mock2 = vi.fn();
+    const deferred2 = vi.fn();
 
     const func2 = deferrable(async function fn2() {
       defer(deferred2, fn2);
@@ -155,19 +190,30 @@ describe("deferrable", () => {
       await new Promise((resolve) =>
         setTimeout(() => {
           mock2();
-          resolve();
+          resolve(true);
         }, 100)
       );
     });
 
     await func2();
 
-    expect(deferred2).toHaveBeenCalledAfter(mock2);
+    expect(mock1.mock.invocationCallOrder[0]).toBeLessThan(
+      mock2.mock.invocationCallOrder[0]
+    );
+    expect(mock1.mock.invocationCallOrder[0]).toBeLessThan(
+      deferred1.mock.invocationCallOrder[0]
+    );
+    expect(mock2.mock.invocationCallOrder[0]).toBeLessThan(
+      deferred2.mock.invocationCallOrder[0]
+    );
+    expect(deferred1.mock.invocationCallOrder[0]).toBeLessThan(
+      deferred2.mock.invocationCallOrder[0]
+    );
   });
 
   it("returns the result from the wrapped function", async () => {
     const value = 42;
-    const deferred = jest.fn();
+    const deferred = vi.fn();
 
     const func = deferrable(async function fn() {
       defer(deferred, fn);
@@ -188,7 +234,7 @@ describe("deferrable", () => {
   });
 
   it("throws if the wrapped function throws, and doesn't run deferred functions", async () => {
-    const deferred = jest.fn();
+    const deferred = vi.fn();
 
     const func = deferrable(async function fn() {
       defer(deferred, fn);
@@ -210,8 +256,8 @@ describe("deferrable", () => {
   });
 
   it("throws if a deferred function throws, and doesn't run subsequent deferred functions", async () => {
-    const mock = jest.fn();
-    const deferred = jest.fn();
+    const mock = vi.fn();
+    const deferred = vi.fn();
 
     const func = deferrable(async function fn() {
       defer(() => {
@@ -223,7 +269,7 @@ describe("deferrable", () => {
       await new Promise((resolve) =>
         setTimeout(() => {
           mock();
-          resolve();
+          resolve(true);
         }, 100)
       );
     });
